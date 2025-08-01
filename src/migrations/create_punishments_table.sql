@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS punishments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  userID VARCHAR(32) NOT NULL,
+  modID VARCHAR(32) NOT NULL,
+  reason TEXT NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  guildID VARCHAR(32) NOT NULL,
+  caseID VARCHAR(32) NOT NULL UNIQUE,
+  appealStatus ENUM('open', 'closed', 'accepted', 'denied') DEFAULT 'open'
+);
