@@ -1,0 +1,23 @@
+{
+  "name": "sapphire-modbot",
+  "version": "2.0.0",
+  "description": "Advanced Discord moderation bot with MySQL backend for Raspberry Pi deployment",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": ["discord", "bot", "moderation", "mysql", "raspberry-pi"],
+  "author": "Previda",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "mysql2": "^3.6.5",
+    "uuid": "^9.0.1",
+    "axios": "^1.6.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

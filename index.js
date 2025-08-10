@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
-const mongoose = require('mongoose');
+// MongoDB removed for MySQL-only migration
+// const mongoose = require('mongoose');
 
 const { isSuperuser, SUPERUSER_ID } = require('./src/utils/superuser');
 
@@ -42,26 +43,53 @@ client.commands = new Collection();
 
 // Load commands, events, and DB connection here (to be implemented)
 
+const fs = require('fs');
+const path = require('path');
 const automod = require('./src/middleware/automod');
+
+// Command loader
+const commandsPath = path.join(__dirname, 'src', 'commands');
+function loadCommands(dir) {
+  fs.readdirSync(dir, { withFileTypes: true }).forEach(file => {
+    if (file.isDirectory()) return loadCommands(path.join(dir, file.name));
+    if (!file.name.endsWith('.js')) return;
+    const command = require(path.join(dir, file.name));
+    if (command.data && command.execute) {
+      client.commands.set(command.data.name, command);
+    }
+  });
+}
+loadCommands(commandsPath);
+
+// Slash command handler
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+  const command = client.commands.get(interaction.commandName);
+  if (!command) {
+    console.log('Invalid command:', interaction.commandName);
+    try {
+      await interaction.reply({ content: 'Invalid command.', ephemeral: true });
+    } catch {}
+    return;
+  }
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error('Command error:', error);
+    try {
+      await interaction.reply({ content: 'There was an error executing this command.', ephemeral: true });
+    } catch {}
+  }
+});
+
 require('./src/events/inviteCleanup')(client);
 
 client.on('messageCreate', async (message) => {
   await automod(message, client);
 });
 
-(async () => {
-  try {
-    await mongoose.connect(process.env.DB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-    console.log('Connected to MongoDB');
-  } catch (err) {
-    console.error('MongoDB connection error:', err);
-  }
-
-  client.login(process.env.DISCORD_TOKEN);
-})();
+// MongoDB connection removed for MySQL-only migration
+client.login(process.env.DISCORD_TOKEN);
 
 const { getUpdateStatus, clearUpdateStatus } = require('./src/utils/botStatus');
 
