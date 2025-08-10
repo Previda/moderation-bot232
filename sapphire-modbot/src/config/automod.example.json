@@ -1,0 +1,14 @@
+{
+  "antiSpam": true,
+  "antiInvite": true,
+  "antiNSFW": true,
+  "capsFlood": true,
+  "emojiFlood": true,
+  "autoWarn": true,
+  "autoMute": true,
+  "threatScore": true,
+  "logChannelId": "",
+  "muteDuration": 600,
+  "warnThreshold": 3,
+  "muteThreshold": 5
+}
