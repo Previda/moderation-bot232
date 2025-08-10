@@ -1,5 +1,5 @@
 const { EmbedBuilder, PermissionsBitField } = require('discord.js');
-const AutomodConfig = require('../schemas/AutomodConfig');
+// const AutomodConfig = require('../schemas/AutomodConfig');
 const { getLevel } = require('../utils/automodLevels');
 const urlRegex = /(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w- ./?%&=]*)?/gi;
 const inviteRegex = /discord\.gg\//i;
@@ -18,15 +18,11 @@ module.exports = async (message, client) => {
   if (!message.guild || message.author.bot) return;
 
   // Fetch automod config for this guild
-  let config = await AutomodConfig.findOne({ guildID: message.guild.id });
-  if (!config) {
-    // Default to medium if not set
-    config = new AutomodConfig({ guildID: message.guild.id, ...getLevel('medium') });
-    await config.save();
-  }
-  // Merge level settings unless custom
-  const levelSettings = config.level !== 'custom' ? getLevel(config.level) : {};
-  const mergedConfig = { ...levelSettings, ...config.toObject() };
+  // TEMP: Hardcoded automod config (replace with MySQL logic later)
+const config = { level: 'medium' };
+const levelSettings = getLevel(config.level);
+const mergedConfig = { ...levelSettings };
+
 
   let actionTaken = false;
 let threatScore = 0;
