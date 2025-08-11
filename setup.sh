@@ -25,13 +25,17 @@ npm install
 # Create .env
 echo "⚙️ Creating config file..."
 cat > .env << 'EOF'
-DISCORD_TOKEN=MTM1ODUyNzIxNTAyMDU0NDIyMg.GT6kXI.9NWxX_PzX3JoyZvAPxcUKzv7MQqwb5zSfFnmIg
+DISCORD_TOKEN=YOUR_DISCORD_TOKEN_HERE
 MYSQL_HOST=sql306.infinityfree.com
 MYSQL_USER=if0_39607707
 MYSQL_PASS=QrAuCNHhmn
 MYSQL_DB=if0_39607707_XXX
 PI_STATS_WEBHOOK=https://discord.com/api/webhooks/1403915943649873940/tfiZBMZstReo-JSk6ayxeooaY7skzX5CqGRztTRgsPbeZ7i42UW-wsxKILYaBc3AP8g5
 EOF
+
+echo "⚠️  IMPORTANT: Edit .env file with your Discord token!"
+echo "   nano .env"
+echo "   Replace YOUR_DISCORD_TOKEN_HERE with your actual token"
 
 echo "✅ Setup complete!"
 echo ""
