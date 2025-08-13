@@ -1,9 +1,9 @@
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { pool, initializeDatabase } = require('./src/models/database');
+const { handleDMCommand } = require('./src/utils/dmHandler');
+const { handleTicketMenu } = require('./src/utils/ticketMenu');
 const fs = require('fs');
 const path = require('path');
-const { initDatabase } = require('./src/models/database');
-const { handleDMCommand } = require('./src/utils/dmHandler');
-const { handleTicketMenu, handleTicketMenuInteraction, handleModalSubmit } = require('./src/utils/ticketMenu');
 require('dotenv').config();
 
 // Create Discord client
@@ -12,37 +12,57 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildModeration,
-        GatewayIntentBits.DirectMessages
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.GuildMembers
     ]
 });
 
-// Initialize commands collection
 client.commands = new Collection();
 
-// Load commands from all subdirectories
-const commandsPath = path.join(__dirname, 'src', 'commands');
-const commandFolders = fs.readdirSync(commandsPath);
-
-for (const folder of commandFolders) {
-    const folderPath = path.join(commandsPath, folder);
-    if (fs.statSync(folderPath).isDirectory()) {
-        const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
+// Load commands recursively
+function loadCommands(dir) {
+    const files = fs.readdirSync(dir);
+    
+    for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
         
-        for (const file of commandFiles) {
-            const filePath = path.join(folderPath, file);
-            const command = require(filePath);
-            
-            if ('data' in command && 'execute' in command) {
-                client.commands.set(command.data.name, command);
-                console.log(`✅ Loaded command: ${command.data.name}`);
-            } else {
-                console.log(`⚠️ Command at ${filePath} is missing required "data" or "execute" property.`);
+        if (stat.isDirectory()) {
+            loadCommands(filePath);
+        } else if (file.endsWith('.js')) {
+            try {
+                const command = require(filePath);
+                if (command.data && command.execute) {
+                    client.commands.set(command.data.name, command);
+                    console.log(`✅ Loaded command: ${command.data.name}`);
+                }
+            } catch (error) {
+                console.error(`❌ Error loading command ${file}:`, error.message);
             }
         }
     }
 }
+
+// Load all commands
+const commandsPath = path.join(__dirname, 'src', 'commands');
+if (fs.existsSync(commandsPath)) {
+    loadCommands(commandsPath);
+}
+
+// Bot ready event
+client.once('ready', async () => {
+    console.log(`🤖 ${client.user.tag} is online!`);
+    console.log(`📊 Serving ${client.guilds.cache.size} servers`);
+    console.log(`⚡ Loaded ${client.commands.size} commands`);
+    
+    // Initialize database
+    try {
+        await initializeDatabase();
+        console.log('🗄️ Database initialized');
+    } catch (error) {
+        console.error('❌ Database initialization failed:', error);
+    }
+});
 
 // Global error handler for invalid commands
 client.on('interactionCreate', async interaction => {
@@ -70,49 +90,79 @@ client.on('interactionCreate', async interaction => {
             }
         }
     }
+
+    // Handle button interactions for ticket menu
+    if (interaction.isButton()) {
+        await handleTicketMenu(interaction);
+    }
+
+    // Handle modal submissions
+    if (interaction.isModalSubmit()) {
+        await handleTicketMenu(interaction);
+    }
 });
 
-// Handle DM messages and ticket menu commands
-client.on('messageCreate', async (message) => {
-    // Ignore bot messages
+// Handle DM messages
+client.on('messageCreate', async message => {
     if (message.author.bot) return;
     
     // Handle DM commands
     if (message.channel.type === 1) { // DM channel
-        if (message.content.startsWith('!')) {
-            await handleDMCommand(message);
-        }
+        await handleDMCommand(message, client);
+        return;
     }
     
-    // Handle ticket menu command in guild channels
-    if (message.guild && message.content.toLowerCase() === '!ticket') {
-        await handleTicketMenu(message);
-    }
-});
-
-// Handle button interactions and modals
-client.on('interactionCreate', async (interaction) => {
-    if (interaction.isButton()) {
-        // Handle ticket menu button interactions
-        if (interaction.customId.startsWith('ticket_') || interaction.customId.startsWith('close_ticket_') || interaction.customId === 'cancel_close') {
-            await handleTicketMenuInteraction(interaction);
+    // Handle !ticket command in guilds
+    if (message.content.toLowerCase() === '!ticket' && message.guild) {
+        // Check if user has manage messages permission
+        if (!message.member.permissions.has('ManageMessages')) {
+            return message.reply('❌ You need **Manage Messages** permission to use this command.');
         }
-    } else if (interaction.isModalSubmit()) {
-        // Handle modal submissions
-        await handleModalSubmit(interaction);
+        
+        const embed = new EmbedBuilder()
+            .setTitle('🎫 Ticket Management Menu')
+            .setDescription('Use the buttons below to manage tickets:')
+            .setColor(0x0099ff);
+            
+        const row = {
+            type: 1,
+            components: [
+                {
+                    type: 2,
+                    style: 1,
+                    label: 'List Tickets',
+                    custom_id: 'ticket_list',
+                    emoji: { name: '📋' }
+                },
+                {
+                    type: 2,
+                    style: 3,
+                    label: 'Create Ticket',
+                    custom_id: 'ticket_create',
+                    emoji: { name: '➕' }
+                },
+                {
+                    type: 2,
+                    style: 4,
+                    label: 'Close Current',
+                    custom_id: 'ticket_close',
+                    emoji: { name: '🔒' }
+                }
+            ]
+        };
+        
+        await message.reply({ embeds: [embed], components: [row] });
     }
 });
 
-// Bot ready event
-client.once('ready', async () => {
-    console.log(`🤖 ${client.user.tag} is online!`);
-    console.log(`📊 Serving ${client.guilds.cache.size} servers`);
-    console.log(`⚡ Loaded ${client.commands.size} commands`);
-    
-    // Initialize database
-    await initDatabase();
-    console.log('🗄️ Database initialized');
+// Global error handling
+process.on('unhandledRejection', error => {
+    console.error('Unhandled promise rejection:', error);
 });
 
-// Login to Discord
+process.on('uncaughtException', error => {
+    console.error('Uncaught exception:', error);
+});
+
+// Start the bot
 client.login(process.env.DISCORD_TOKEN);
