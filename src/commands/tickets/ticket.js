@@ -53,8 +53,8 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('transcript')
-                .setDescription('Generate ticket transcript')
-                .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)),
+                .setDescription('Generate ticket transcript'))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
 
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
