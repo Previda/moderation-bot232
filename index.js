@@ -3,6 +3,7 @@ const { pool } = require('./src/models/database');
 const { initializeDatabase } = require('./src/models/init-database');
 const { handleDMCommand } = require('./src/utils/dmHandler');
 const { handleTicketMenu } = require('./src/utils/ticketMenu');
+const BackupScheduler = require('./src/services/backupScheduler');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
@@ -19,6 +20,9 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+
+// Initialize backup scheduler
+const backupScheduler = new BackupScheduler(client);
 
 // Load commands recursively
 function loadCommands(dir) {
@@ -60,11 +64,15 @@ client.once('ready', async () => {
     initializeDatabase()
         .then(() => {
             console.log('🗄️ Database initialized successfully');
+            // Start backup scheduler after database is ready
+            backupScheduler.start();
+            console.log('💾 Backup scheduler started');
         })
         .catch((error) => {
             console.log('⚠️ Database connection failed - bot running in limited mode');
             console.log('📝 Database features (tickets, notes, strikes) will be disabled');
             console.log('✅ All other commands will work normally');
+            console.log('⚠️ Backup scheduler disabled due to database issues');
         });
 });
 

@@ -44,10 +44,16 @@ module.exports = {
                 }
             }
 
-            // Work jobs with different payouts
+            // Work jobs with different payouts and success rates
             const jobs = [
-                { name: 'Pizza Delivery', pay: [50, 150], xp: [10, 25] },
-                { name: 'Dog Walker', pay: [30, 100], xp: [8, 20] },
+                { name: 'Pizza Delivery', pay: [50, 150], xp: [10, 25], success: 0.85 },
+                { name: 'Dog Walker', pay: [30, 100], xp: [8, 20], success: 0.90 },
+                { name: 'Uber Driver', pay: [80, 200], xp: [15, 30], success: 0.75 },
+                { name: 'Freelance Coding', pay: [100, 300], xp: [20, 40], success: 0.70 },
+                { name: 'Lawn Mowing', pay: [40, 120], xp: [12, 22], success: 0.88 },
+                { name: 'Tutoring', pay: [60, 180], xp: [18, 35], success: 0.80 },
+                { name: 'Food Delivery', pay: [45, 130], xp: [10, 24], success: 0.87 },
+                { name: 'House Cleaning', pay: [70, 160], xp: [14, 28], success: 0.82 },
                 { name: 'Freelance Coding', pay: [100, 300], xp: [20, 40] },
                 { name: 'Uber Driver', pay: [75, 200], xp: [15, 30] },
                 { name: 'Tutoring', pay: [60, 180], xp: [12, 28] },
