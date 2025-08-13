@@ -1,21 +1,141 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Create MySQL connection pool
-const pool = mysql.createPool({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASS,
-    database: process.env.MYSQL_DB,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+// Alternative hosts for InfinityFree MySQL (DNS fallback)
+const MYSQL_HOSTS = [
+    process.env.MYSQL_HOST || 'sql306.infinityfree.com',
+    'sql306.epizy.com',
+    'sql306.unaux.com',
+    // Add IP address fallback if available
+    process.env.MYSQL_HOST_IP
+].filter(Boolean);
+
+let pool = null;
+let isConnected = false;
+
+async function createResilientPool() {
+    const baseConfig = {
+        user: process.env.MYSQL_USER,
+        password: process.env.MYSQL_PASS,
+        database: process.env.MYSQL_DB,
+        waitForConnections: true,
+        connectionLimit: 5,
+        queueLimit: 0,
+        acquireTimeout: 30000,
+        timeout: 30000,
+        reconnect: true,
+        charset: 'utf8mb4',
+        // Additional resilience settings
+        connectTimeout: 60000,
+        idleTimeout: 300000,
+        maxIdle: 5,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0
+    };
+
+    console.log('🔍 Attempting to connect to MySQL with DNS fallback...');
+    
+    for (const host of MYSQL_HOSTS) {
+        try {
+            console.log(`🔍 Trying MySQL host: ${host}`);
+            
+            const testPool = mysql.createPool({
+                ...baseConfig,
+                host: host
+            });
+
+            // Test the connection with timeout
+            const connection = await Promise.race([
+                testPool.getConnection(),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Connection timeout')), 15000)
+                )
+            ]);
+            
+            await connection.ping();
+            connection.release();
+
+            console.log(`✅ MySQL connected successfully to: ${host}`);
+            isConnected = true;
+            return testPool;
+
+        } catch (error) {
+            console.log(`❌ MySQL host failed: ${host} - ${error.code || error.message}`);
+            if (error.code === 'ENOTFOUND') {
+                console.log('💡 DNS resolution failed - try running: node fix-mysql.js');
+            }
+        }
+    }
+
+    throw new Error('All MySQL hosts failed to connect - check DNS settings');
+}
+
+// Initialize pool with comprehensive error handling
+async function initializePool() {
+    if (pool && isConnected) return pool;
+    
+    try {
+        pool = await createResilientPool();
+        return pool;
+    } catch (error) {
+        console.error('❌ Failed to create MySQL pool:', error.message);
+        console.log('🔧 Quick fix: Run "bash quick-fix.sh" or "node fix-mysql.js"');
+        
+        // Create a graceful fallback pool
+        isConnected = false;
+        pool = {
+            execute: async (query, params) => {
+                throw new Error(`Database unavailable: ${error.message}`);
+            },
+            getConnection: async () => {
+                throw new Error(`Database unavailable: ${error.message}`);
+            },
+            end: async () => {},
+            // Add status check method
+            isHealthy: () => false
+        };
+        
+        return pool;
+    }
+}
+
+// Get pool with automatic retry
+async function getPool() {
+    if (!pool || !isConnected) {
+        return await initializePool();
+    }
+    return pool;
+}
+
+// Health check function
+async function checkDatabaseHealth() {
+    try {
+        const currentPool = await getPool();
+        if (!isConnected) return false;
+        
+        const connection = await currentPool.getConnection();
+        await connection.ping();
+        connection.release();
+        return true;
+    } catch (error) {
+        console.log('❌ Database health check failed:', error.message);
+        isConnected = false;
+        return false;
+    }
+}
+
+module.exports = { 
+    pool: getPool(),
+    getPool,
+    initializePool,
+    checkDatabaseHealth,
+    isConnected: () => isConnected
+};
 
 // Initialize database tables
 async function initDatabase() {
     try {
-        const connection = await pool.getConnection();
+        const connection = await getPool().getConnection();
         
         // Punishments table
         await connection.execute(`
