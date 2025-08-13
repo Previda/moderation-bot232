@@ -46,33 +46,28 @@ for (const folder of commandFolders) {
 
 // Global error handler for invalid commands
 client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
-
-    const command = interaction.client.commands.get(interaction.commandName);
-
-    if (!command) {
-        console.error(`❌ No command matching ${interaction.commandName} was found.`);
-        await interaction.reply({ 
-            content: '❌ Unknown command. Use `/commands` to see available commands.', 
-            ephemeral: true 
-        });
-        return;
-    }
-
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(`❌ Error executing ${interaction.commandName}:`, error);
+    if (interaction.isCommand()) {
+        const command = client.commands.get(interaction.commandName);
         
-        const errorMessage = { 
-            content: '❌ There was an error while executing this command!', 
-            ephemeral: true 
-        };
-        
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp(errorMessage);
-        } else {
-            await interaction.reply(errorMessage);
+        // Global invalid command handler
+        if (!command) {
+            console.log(`❌ Invalid command attempted: /${interaction.commandName} by ${interaction.user.tag}`);
+            return interaction.reply({ 
+                content: '❌ **Invalid command!** Use `/commands` to see all available commands.', 
+                ephemeral: true 
+            });
+        }
+
+        try {
+            await command.execute(interaction);
+        } catch (error) {
+            console.error('Command execution error:', error);
+            const reply = { content: '❌ There was an error executing this command!', ephemeral: true };
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp(reply);
+            } else {
+                await interaction.reply(reply);
+            }
         }
     }
 });
