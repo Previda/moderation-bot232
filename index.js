@@ -56,13 +56,16 @@ client.once('ready', async () => {
     console.log(`📊 Serving ${client.guilds.cache.size} servers`);
     console.log(`⚡ Loaded ${client.commands.size} commands`);
     
-    // Initialize database
-    try {
-        await initializeDatabase();
-        console.log('🗄️ Database initialized');
-    } catch (error) {
-        console.error('❌ Database initialization failed:', error);
-    }
+    // Initialize database (non-blocking)
+    initializeDatabase()
+        .then(() => {
+            console.log('🗄️ Database initialized successfully');
+        })
+        .catch((error) => {
+            console.log('⚠️ Database connection failed - bot running in limited mode');
+            console.log('📝 Database features (tickets, notes, strikes) will be disabled');
+            console.log('✅ All other commands will work normally');
+        });
 });
 
 // Global error handler for invalid commands
