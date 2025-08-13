@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# 🚀 Ultimate Sapphire ModBot Deployment Script
-# One-command deployment with automatic cleanup and error handling
+# 🚀 FIXED Sapphire ModBot Deployment Script
+# This version properly handles clean MySQL schema files
 
 set -e  # Exit on any error
 
@@ -30,7 +30,7 @@ clear
 echo -e "${PURPLE}"
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                 🚀 SAPPHIRE MODBOT DEPLOYER 🚀               ║"
-echo "║              Ultimate Clean Deployment System                ║"
+echo "║              FIXED - MySQL Schema Friendly                   ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -38,13 +38,11 @@ echo -e "${NC}"
 echo -e "${CYAN}🔍 STEP 1: Environment Check${NC}"
 animate "Checking system requirements"
 
-# Check Node.js
 if ! command -v node &> /dev/null; then
     echo -e "${RED}❌ Node.js not found! Please install Node.js first.${NC}"
     exit 1
 fi
 
-# Check Git
 if ! command -v git &> /dev/null; then
     echo -e "${RED}❌ Git not found! Please install Git first.${NC}"
     exit 1
@@ -69,48 +67,67 @@ animate "Cloning from GitHub"
 
 if ! git clone https://github.com/Previda/moderation-bot232.git; then
     echo -e "${RED}❌ Failed to clone repository!${NC}"
-    echo -e "${YELLOW}💡 Check your internet connection and repository access${NC}"
     exit 1
 fi
 
 cd moderation-bot232
 echo -e "${GREEN}✅ Repository cloned successfully${NC}"
 
-# Step 4: Aggressive MongoDB Cleanup
-echo -e "${CYAN}🗑️ STEP 4: MongoDB Cleanup (Aggressive)${NC}"
-animate "Removing all MongoDB/Mongoose files"
+# Step 4: SMART MongoDB Cleanup (Preserves Clean MySQL Schemas)
+echo -e "${CYAN}🗑️ STEP 4: Smart MongoDB Cleanup${NC}"
+animate "Removing ONLY actual MongoDB files"
 
-# Remove entire schemas directory
-rm -rf src/schemas/ 2>/dev/null || true
+# Remove old schemas directory if it contains actual mongoose files
+if [ -d "src/schemas" ]; then
+    echo -e "${YELLOW}🔍 Checking schemas directory...${NC}"
+    
+    # Check if any schema file actually imports mongoose
+    ACTUAL_MONGOOSE=$(find src/schemas -name "*.js" -exec grep -l "require.*['\"]mongoose['\"]" {} \; 2>/dev/null || true)
+    ACTUAL_MONGOOSE="$ACTUAL_MONGOOSE $(find src/schemas -name "*.js" -exec grep -l "mongoose\.Schema\|mongoose\.model\|mongoose\.connect" {} \; 2>/dev/null || true)"
+    
+    if [ ! -z "$ACTUAL_MONGOOSE" ]; then
+        echo -e "${YELLOW}⚠️  Found actual MongoDB schema files - removing...${NC}"
+        rm -rf src/schemas/
+        echo -e "${GREEN}✅ Removed old MongoDB schemas${NC}"
+    else
+        echo -e "${GREEN}✅ Schemas are clean MySQL files - preserving${NC}"
+    fi
+fi
 
-# Remove specific problematic files
+# Remove specific problematic files that definitely use mongoose
 PROBLEM_FILES=(
-    "src/utils/threatScore.js"
-    "src/commands/admin/threatscore.js"
-    "src/utils/automod.js"
+    "src/utils/threatScore.js.old"
+    "src/commands/admin/threatscore.js.old"
     "src/middleware/automod.js"
     "src/models/mongoose.js"
     "src/models/schemas.js"
 )
 
 for file in "${PROBLEM_FILES[@]}"; do
-    rm -f "$file" 2>/dev/null || true
+    if [ -f "$file" ]; then
+        rm -f "$file" 2>/dev/null || true
+        echo -e "${GREEN}✅ Removed $file${NC}"
+    fi
 done
 
-# Find and remove ONLY actual mongoose imports (exclude our clean MySQL schemas)
-echo -e "${YELLOW}🔍 Scanning for actual mongoose imports...${NC}"
-MONGOOSE_FILES=$(find . -name "*.js" -type f -exec grep -l "require.*['\"]mongoose['\"]" {} \; 2>/dev/null | grep -v node_modules || true)
-MONGOOSE_FILES="$MONGOOSE_FILES $(find . -name "*.js" -type f -exec grep -l "import.*mongoose" {} \; 2>/dev/null | grep -v node_modules || true)"
-MONGOOSE_FILES="$MONGOOSE_FILES $(find . -name "*.js" -type f -exec grep -l "mongoose\.connect\|mongoose\.Schema\|mongoose\.model" {} \; 2>/dev/null | grep -v node_modules || true)"
+# Only remove files that ACTUALLY import mongoose (not just mention it)
+echo -e "${YELLOW}🔍 Scanning for ACTUAL mongoose imports...${NC}"
 
-# Remove duplicates and empty entries
-MONGOOSE_FILES=$(echo "$MONGOOSE_FILES" | tr ' ' '\n' | sort -u | grep -v '^$' || true)
+# Look for require('mongoose') or import mongoose
+ACTUAL_IMPORTS=$(find . -name "*.js" -type f -exec grep -l "require(['\"]mongoose['\"])" {} \; 2>/dev/null | grep -v node_modules || true)
+ACTUAL_IMPORTS="$ACTUAL_IMPORTS $(find . -name "*.js" -type f -exec grep -l "import.*mongoose.*from" {} \; 2>/dev/null | grep -v node_modules || true)"
 
-if [ ! -z "$MONGOOSE_FILES" ]; then
-    echo -e "${YELLOW}⚠️  Found files with actual MongoDB imports:${NC}"
-    echo "$MONGOOSE_FILES"
-    echo "$MONGOOSE_FILES" | xargs rm -f
-    echo -e "${GREEN}✅ Removed problematic files${NC}"
+# Look for mongoose.connect, mongoose.Schema, mongoose.model usage
+MONGOOSE_USAGE=$(find . -name "*.js" -type f -exec grep -l "mongoose\.connect\|mongoose\.Schema\|mongoose\.model" {} \; 2>/dev/null | grep -v node_modules || true)
+
+# Combine and remove duplicates
+ALL_MONGOOSE=$(echo "$ACTUAL_IMPORTS $MONGOOSE_USAGE" | tr ' ' '\n' | sort -u | grep -v '^$' || true)
+
+if [ ! -z "$ALL_MONGOOSE" ]; then
+    echo -e "${YELLOW}⚠️  Found files with actual mongoose usage:${NC}"
+    echo "$ALL_MONGOOSE"
+    echo "$ALL_MONGOOSE" | xargs rm -f
+    echo -e "${GREEN}✅ Removed actual mongoose files${NC}"
 else
     echo -e "${GREEN}✅ No actual mongoose imports found${NC}"
     echo -e "${BLUE}💡 Clean MySQL schema files preserved${NC}"
@@ -163,15 +180,16 @@ for file in "${CRITICAL_FILES[@]}"; do
     fi
 done
 
-# Verify no mongoose references remain
-REMAINING_MONGOOSE=$(find . -name "*.js" -type f -exec grep -l "mongoose" {} \; 2>/dev/null | grep -v node_modules || true)
+# Verify NO actual mongoose imports remain
+REMAINING_MONGOOSE=$(find . -name "*.js" -type f -exec grep -l "require(['\"]mongoose['\"])\|mongoose\.connect\|mongoose\.Schema\|mongoose\.model" {} \; 2>/dev/null | grep -v node_modules || true)
 if [ ! -z "$REMAINING_MONGOOSE" ]; then
-    echo -e "${RED}❌ Still found mongoose references:${NC}"
+    echo -e "${RED}❌ Still found actual mongoose usage:${NC}"
     echo "$REMAINING_MONGOOSE"
     exit 1
 fi
 
 echo -e "${GREEN}✅ All validation checks passed${NC}"
+echo -e "${BLUE}💡 Clean MySQL schemas preserved and ready${NC}"
 
 # Success Message
 echo ""
@@ -197,5 +215,6 @@ echo "• 💰 Economy System (/balance, /daily, /work)"
 echo "• 🖥️ System Monitoring (/sysinfo, /tempsys)"
 echo "• 📋 Help System (/commands)"
 echo "• 🛡️ Error Handling (invalid command protection)"
+echo "• 🗄️ Clean MySQL Schemas (Ticket, Note, Strike, Invite, ThreatScore)"
 echo ""
 echo -e "${GREEN}🚀 Ready to launch! Your bot is clean and optimized!${NC}"
