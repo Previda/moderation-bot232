@@ -32,10 +32,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/sapphire-modbot.git"
+    "url": "https://github.com/Previda/sapphire-modbot.git"
   },
-  "homepage": "https://github.com/yourusername/sapphire-modbot#readme",
+  "homepage": "https://github.com/Previda/sapphire-modbot#readme",
   "bugs": {
-    "url": "https://github.com/yourusername/sapphire-modbot/issues"
+    "url": "https://github.com/Previda/sapphire-modbot/issues"
   }
 }

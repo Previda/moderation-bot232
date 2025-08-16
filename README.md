@@ -22,7 +22,7 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/sapphire-modbot.git
+git clone https://github.com/Previda/sapphire-modbot.git
 cd sapphire-modbot
 
 # Install dependencies
