@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # 🛡️ Sapphire Moderation Bot - Production Deployment
-# Enterprise-grade deployment script for Raspberry Pi and cloud platforms
-
 echo "🛡️ Sapphire Moderation Bot v2.0"
 echo "================================"
 echo "Enterprise Discord moderation with 42 commands"
@@ -19,12 +17,30 @@ fi
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-npm install --production
+npm install
 
 # Environment setup
 if [ ! -f .env ]; then
     echo "⚙️ Setting up environment configuration..."
-    cp .env.example .env
+    if [ -f .env.example ]; then
+        cp .env.example .env
+    else
+        echo "Creating .env template..."
+        cat > .env << 'EOF'
+# Discord Bot Configuration
+DISCORD_TOKEN=your_discord_bot_token_here
+
+# Database Configuration
+MYSQL_URL=mysql://username:password@host:port/database?ssl-mode=REQUIRED
+
+# Optional: Discord Webhooks
+PI_STATS_WEBHOOK=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL
+
+# Optional: Channel IDs for logging
+MOD_LOG_CHANNEL_ID=
+APPEALS_CHANNEL_ID=
+EOF
+    fi
     echo ""
     echo "🔧 Configuration required:"
     echo "   nano .env"
@@ -34,11 +50,6 @@ if [ ! -f .env ]; then
     echo "   • MYSQL_URL - Cloud MySQL connection string"
     echo "   • PI_STATS_WEBHOOK - Discord webhook for system stats"
     echo ""
-    echo "🌐 Supported MySQL providers:"
-    echo "   • Aiven (recommended)"
-    echo "   • PlanetScale"
-    echo "   • Railway"
-    echo "   • Traditional MySQL"
     exit 1
 fi
 

@@ -29,6 +29,7 @@ cd sapphire-modbot
 npm install
 
 # Configure environment
+cp .env.example .env
 nano .env
 
 # Start bot
