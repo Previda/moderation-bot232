@@ -1,95 +1,70 @@
-k# Sapphire ModBot - MySQL Edition
+# 🛡️ Sapphire Moderation Bot
 
-A next-generation Discord moderation bot with advanced features, fully migrated to MySQL for Raspberry Pi deployment.
+> Enterprise-grade Discord moderation bot with advanced backup & disaster recovery
 
-## Features
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Discord.js](https://img.shields.io/badge/Discord.js-v14-blue.svg)](https://discord.js.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0+-orange.svg)](https://mysql.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-* **MySQL-only backend** (MongoDB fully removed)
-* **Ban system with unique Case IDs**
-* **Appeal system**
-* **Tickets, verification, anti-raid protection**
-* **Pi system monitoring** with `/tempsys` command
-* **Webhook integration** for system stats
-* **Robust error handling** (won't crash on invalid commands)
-* **Raspberry Pi OS Lite compatible** (headless deployment)
+## ✨ Features
 
-## Tech Stack
+- **🔨 42 Advanced Commands** - Complete moderation, economy, tickets, and utility suite
+- **💾 Enterprise Backup System** - Automated backups, disaster recovery, server migration
+- **🔄 Undo/Reverse Actions** - Reverse any moderation action with comprehensive logging
+- **🎫 Advanced Ticketing** - Full ticket management with transcripts and appeals
+- **💰 Economy System** - Work commands, balance tracking, daily rewards
+- **🤖 Smart Automoderation** - Threat scoring, configurable levels, auto-actions
+- **🔐 Security Features** - Verification system, anti-raid, permission management
+- **📊 Raspberry Pi Ready** - Optimized for Pi deployment with system monitoring
 
-* Discord.js v14+
-* MySQL (InfinityFree hosting compatible)
-* Node.js 16+
-* Raspberry Pi OS Lite ready
+## 🚀 Quick Start
 
-## Quick Setup
-
-### 1. Clone Repository
 ```bash
-git clone https://github.com/Previda/moderation-bot232.git
-cd moderation-bot232
-```
+# Clone repository
+git clone https://github.com/yourusername/sapphire-modbot.git
+cd sapphire-modbot
 
-### 2. Install Dependencies
-```bash
+# Install dependencies
 npm install
-```
 
-### 3. Configure Environment
-```bash
-cp .env.example .env
-# Edit .env with your credentials
-```
+# Configure environment
+nano .env
 
-### 4. Run Bot
-```bash
+# Start bot
 npm start
 ```
 
-## Environment Variables
+## ⚙️ Configuration
 
-Required in `.env` file:
+Create `.env` file:
+
+```env
+# Discord Bot
+DISCORD_TOKEN=your_discord_bot_token
+
+# Database (choose one)
+MYSQL_URL=mysql://user:pass@host:port/db?ssl-mode=REQUIRED
+# OR traditional format:
+MYSQL_HOST=localhost
+MYSQL_USER=username
+MYSQL_PASS=password
+MYSQL_DB=database
+
+# Webhooks
+PI_STATS_WEBHOOK=https://discord.com/api/webhooks/...
 ```
-DISCORD_TOKEN=your-bot-token
-MYSQL_HOST=your-mysql-host
-MYSQL_USER=your-mysql-user
-MYSQL_PASS=your-mysql-password
-MYSQL_DB=your-mysql-database
-PI_STATS_WEBHOOK=https://discord.com/api/webhooks/your-webhook-url
-```
 
-## Raspberry Pi Deployment
+## 📋 Commands Overview
 
-This bot is optimized for **Raspberry Pi OS Lite** (headless):
-
-1. **Install Node.js:**
-   ```bash
-   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-   sudo apt-get install -y nodejs
-   ```
-
-2. **Clone and setup:**
-   ```bash
-   git clone https://github.com/Previda/moderation-bot232.git
-   cd moderation-bot232
-   npm install
-   ```
-
-3. **Configure `.env` file with your credentials**
-
-4. **Run with PM2 (recommended):**
-   ```bash
-   sudo npm install -g pm2
-   pm2 start index.js --name "modbot"
-   pm2 startup
-   pm2 save
-   ```
-
-## Commands
-
-* `/ban` - Ban a user with case ID
-* `/kick` - Kick a user
-* `/warn` - Warn a user
-* `/mute` / `/unmute` - Timeout management
-* `/tempsys` - Get Pi system stats (CPU temp, RAM, disk usage)
+| Category | Commands | Description |
+|----------|----------|-------------|
+| **Moderation** | `/ban` `/kick` `/mute` `/warn` `/undo` | Complete moderation suite with undo functionality |
+| **Tickets** | `/ticket` `/reverse` `/transcript` | Advanced ticket management system |
+| **Economy** | `/work` `/balance` `/daily` `/reset` | Full economy system with jobs and rewards |
+| **Backup** | `/backup` `/disaster` `/manage` | Enterprise disaster recovery tools |
+| **Utility** | `/sysinfo` `/tempsys` `/userinfo` | System monitoring and user management |
+| **Appeals** | `/appeal` `/appeals-setup` | Comprehensive appeal system |
 * `/commands` - List all available commands
 
 ## System Monitoring

@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Alternative hosts for InfinityFree MySQL (DNS fallback)
+// Support both traditional MySQL and PlanetScale URL format
 const MYSQL_HOSTS = [
     process.env.MYSQL_HOST || 'sql306.infinityfree.com',
     'sql306.epizy.com',
@@ -10,10 +10,45 @@ const MYSQL_HOSTS = [
     process.env.MYSQL_HOST_IP
 ].filter(Boolean);
 
+// Check if using PlanetScale URL format
+const MYSQL_URL = process.env.MYSQL_URL;
+
 let pool = null;
 let isConnected = false;
 
 async function createResilientPool() {
+    // If MySQL URL is provided (PlanetScale, Aiven, etc.), use it directly
+    if (MYSQL_URL) {
+        try {
+            console.log('🔍 Connecting to MySQL via URL...');
+            const pool = mysql.createPool({
+                uri: MYSQL_URL,
+                waitForConnections: true,
+                connectionLimit: 5,
+                queueLimit: 0,
+                ssl: {
+                    rejectUnauthorized: false // More flexible SSL handling
+                }
+            });
+            
+            const connection = await Promise.race([
+                pool.getConnection(),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Connection timeout')), 15000)
+                )
+            ]);
+            
+            await connection.ping();
+            connection.release();
+            
+            console.log('✅ MySQL connected successfully via URL!');
+            isConnected = true;
+            return pool;
+        } catch (error) {
+            console.log('❌ MySQL URL connection failed:', error.message);
+        }
+    }
+
     const baseConfig = {
         user: process.env.MYSQL_USER,
         password: process.env.MYSQL_PASS,
@@ -21,16 +56,11 @@ async function createResilientPool() {
         waitForConnections: true,
         connectionLimit: 5,
         queueLimit: 0,
-        acquireTimeout: 30000,
-        timeout: 30000,
-        reconnect: true,
+        connectTimeout: 30000,
         charset: 'utf8mb4',
-        // Additional resilience settings
-        connectTimeout: 60000,
-        idleTimeout: 300000,
-        maxIdle: 5,
-        enableKeepAlive: true,
-        keepAliveInitialDelay: 0
+        ssl: {
+            rejectUnauthorized: false
+        }
     };
 
     console.log('🔍 Attempting to connect to MySQL with DNS fallback...');

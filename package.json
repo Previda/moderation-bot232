@@ -1,23 +1,41 @@
 {
   "name": "sapphire-modbot",
   "version": "2.0.0",
-  "description": "Advanced Discord moderation bot with MySQL backend for Raspberry Pi deployment",
+  "description": "Enterprise-grade Discord moderation bot with advanced backup & disaster recovery",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "deploy": "bash deploy.sh",
+    "test": "echo \"No tests specified\" && exit 0"
   },
-  "keywords": ["discord", "bot", "moderation", "mysql", "raspberry-pi"],
-  "author": "Previda",
+  "keywords": [
+    "discord",
+    "bot",
+    "moderation",
+    "mysql",
+    "backup",
+    "enterprise",
+    "raspberry-pi"
+  ],
+  "author": "Mikhail",
   "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "dependencies": {
     "discord.js": "^14.14.1",
-    "dotenv": "^16.3.1",
     "mysql2": "^3.6.5",
+    "dotenv": "^16.3.1",
     "uuid": "^9.0.1",
     "axios": "^1.6.2"
   },
-  "engines": {
-    "node": ">=16.0.0"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/sapphire-modbot.git"
+  },
+  "homepage": "https://github.com/yourusername/sapphire-modbot#readme",
+  "bugs": {
+    "url": "https://github.com/yourusername/sapphire-modbot/issues"
   }
 }
